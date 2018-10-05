@@ -206,6 +206,12 @@ private:
 	omrthread_monitor_t _initWorkCompleteMonitor;
 	omrthread_monitor_t _concurrentTuningMonitor;
 
+#if defined(OMR_GC_REALTIME)
+	/* SATB related monitor */
+	omrthread_monitor_t _concurrentTracingTerminationMonitor;
+	bool _sATBRememberedSetFlushed;
+#endif /* defined(OMR_GC_REALTIME) */
+
 	/* Concurrent initialization */
 	InitWorkItem *_initRanges;
 	uint32_t _numInitRanges;
@@ -499,6 +505,10 @@ public:
 		,_initWorkMonitor(NULL)
 		,_initWorkCompleteMonitor(NULL)
 		,_concurrentTuningMonitor(NULL)
+#if defined(OMR_GC_REALTIME)
+		,_concurrentTracingTerminationMonitor(NULL)
+		,_sATBRememberedSetFlushed(false)
+#endif /* defined(OMR_GC_REALTIME) */
 		,_initRanges(NULL)
 		,_numInitRanges(0)
 		,_numPhysicalInitRanges(0)

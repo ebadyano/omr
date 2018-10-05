@@ -117,6 +117,31 @@ MM_ConcurrentGCIncrementalUpdate::initialize(MM_EnvironmentBase *env)
 	return false;
 }
 
+/* Adjust Concurrent GC releated structures after heap contraction.
+ *
+ *
+ * @param size The amount of memory removed from the heap
+ * @param lowAddress The base address of the memory removed from the heap
+ * @param highAddress The top address (non-inclusive) of the memory removed from the heap
+ * @param lowValidAddress The first valid address previous to the lowest in the heap range being removed
+ * @param highValidAddress The first valid address following the highest in the heap range being removed
+ * @return true if operation completes with success
+ *
+ * @see MM_ConcurrentGC::heapRemoveRange()
+ */
+bool
+MM_ConcurrentGCIncrementalUpdate::heapRemoveRange(MM_EnvironmentBase *env, MM_MemorySubSpace *subspace, uintptr_t size, void *lowAddress, void *highAddress, void *lowValidAddress, void *highValidAddress)
+{
+	/* Contract any superclass structures */
+	bool result = MM_ConcurrentGC::heapRemoveRange(env, subspace, size, lowAddress, highAddress, lowValidAddress, highValidAddress);
+
+	/* ...and then contract the card table */
+	result = result && ((MM_ConcurrentCardTable *)_cardTable)->heapRemoveRange(env, subspace, size, lowAddress, highAddress, lowValidAddress, highValidAddress);
+	_heapAlloc = (void *)_extensions->heap->getHeapTop();
+
+	return result;
+}
+
 bool
 MM_ConcurrentGCIncrementalUpdate::heapAddRange(MM_EnvironmentBase *env, MM_MemorySubSpace *subspace, uintptr_t size, void *lowAddress, void *highAddress)
 {
@@ -196,5 +221,7 @@ MM_ConcurrentGCIncrementalUpdate::createCardTable(MM_EnvironmentBase *env)
 
 	return result;
 }
+
+
 
 #endif /* OMR_GC_MODRON_CONCURRENT_MARK */

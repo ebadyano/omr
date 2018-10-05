@@ -137,7 +137,7 @@ public:
 	/**
 	 * Returns TRUE if all non-deferred packets are empty, FALSE otherwise.
 	 */
-	MMINLINE bool tracingExhausted()
+	virtual bool tracingExhausted()
 	{
 		return(_emptyPacketList.getCount() + _deferredPacketList.getCount() + _deferredFullPacketList.getCount() == _activePackets);
 	};
