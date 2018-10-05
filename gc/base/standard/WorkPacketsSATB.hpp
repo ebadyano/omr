@@ -47,6 +47,11 @@ public:
 
 	MMINLINE bool inUsePacketsAvailable(MM_EnvironmentBase *env) { return !_inUseBarrierPacketList.isEmpty();}
 
+	virtual bool tracingExhausted()
+	{
+		return isAllPacketsEmpty();
+	};
+
 	virtual MM_Packet *getBarrierPacket(MM_EnvironmentBase *env);
 	virtual void putInUsePacket(MM_EnvironmentBase *env, MM_Packet *packet);
 	virtual void removePacketFromInUseList(MM_EnvironmentBase *env, MM_Packet *packet);
