@@ -28,7 +28,8 @@
 #include <string.h>
 
 #include "MemoryPoolAddressOrderedList.hpp"
-
+#include "ParallelGlobalGC.hpp"
+#include "Configuration.hpp"
 #include "AllocateDescription.hpp"
 #include "Debug.hpp"
 #include "EnvironmentBase.hpp"
@@ -548,6 +549,12 @@ MM_MemoryPoolAddressOrderedList::allocateObject(MM_EnvironmentBase *env,  MM_All
 		allocDescription->setTLHAllocation(false);
 		allocDescription->setNurseryAllocation((_memorySubSpace->getTypeFlags() == MEMORY_TYPE_NEW) ? true : false);
 		allocDescription->setMemoryPool(this);
+
+		if (env->getExtensions()->configuration->isSnapshotAtTheBeginningBarrierEnabled())
+		{
+			MM_ParallelGlobalGC *globalCollector = (MM_ParallelGlobalGC *)env->getExtensions()->getGlobalCollector();
+			globalCollector->getMarkingScheme()->getMarkMap()->markLargeAllocation(env, (omrobjectptr_t) addr);
+		}
 	}
 
 	return addr;
@@ -562,6 +569,12 @@ MM_MemoryPoolAddressOrderedList::collectorAllocate(MM_EnvironmentBase *env, MM_A
 		allocDescription->setTLHAllocation(false);
 		allocDescription->setNurseryAllocation((_memorySubSpace->getTypeFlags() == MEMORY_TYPE_NEW) ? true : false);
 		allocDescription->setMemoryPool(this);
+
+		if (env->getExtensions()->configuration->isSnapshotAtTheBeginningBarrierEnabled())
+		{
+			MM_ParallelGlobalGC *globalCollector = (MM_ParallelGlobalGC *)env->getExtensions()->getGlobalCollector();
+			globalCollector->getMarkingScheme()->getMarkMap()->markLargeAllocation(env, (omrobjectptr_t) addr);
+		}
 	}
 
 	return addr;
@@ -682,6 +695,12 @@ MM_MemoryPoolAddressOrderedList::allocateTLH(MM_EnvironmentBase *env, MM_Allocat
 		allocDescription->setTLHAllocation(true);
 		allocDescription->setNurseryAllocation((_memorySubSpace->getTypeFlags() == MEMORY_TYPE_NEW) ? true : false);
 		allocDescription->setMemoryPool(this);
+
+		if (env->getExtensions()->configuration->isSnapshotAtTheBeginningBarrierEnabled())
+		{
+			MM_ParallelGlobalGC *globalCollector = (MM_ParallelGlobalGC *)env->getExtensions()->getGlobalCollector();
+			globalCollector->getMarkingScheme()->getMarkMap()->preMark((omrobjectptr_t) addrBase, (omrobjectptr_t) addrTop);
+		}
 	}
 
 	return tlhBase;
@@ -698,6 +717,12 @@ MM_MemoryPoolAddressOrderedList::collectorAllocateTLH(MM_EnvironmentBase *env,
 		allocDescription->setTLHAllocation(true);
 		allocDescription->setNurseryAllocation((_memorySubSpace->getTypeFlags() == MEMORY_TYPE_NEW) ? true : false);
 		allocDescription->setMemoryPool(this);
+
+		if (env->getExtensions()->configuration->isSnapshotAtTheBeginningBarrierEnabled())
+		{
+			MM_ParallelGlobalGC *globalCollector = (MM_ParallelGlobalGC *)env->getExtensions()->getGlobalCollector();
+			globalCollector->getMarkingScheme()->getMarkMap()->preMark((omrobjectptr_t) addrBase, (omrobjectptr_t) addrTop);
+		}
 	}
 	return base;
 }

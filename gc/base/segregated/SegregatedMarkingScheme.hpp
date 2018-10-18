@@ -62,19 +62,8 @@ public:
 			 * => if there is only one object to premark than low will be equal to high
 			 */
 			uint8_t *objPtrHigh = (uint8_t *)cellList + preAllocatedBytes - cellSize;
-			uintptr_t slotIndexLow, slotIndexHigh;
-			uintptr_t bitMaskLow, bitMaskHigh;
 
-			_markMap->getSlotIndexAndBlockMask((omrobjectptr_t)objPtrLow, &slotIndexLow, &bitMaskLow, false /* high bit block mask for low slot word */);
-			_markMap->getSlotIndexAndBlockMask((omrobjectptr_t)objPtrHigh, &slotIndexHigh, &bitMaskHigh, true /* low bit block mask for high slot word */);
-
-			if (slotIndexLow == slotIndexHigh) {
-				_markMap->markBlockAtomic(slotIndexLow, bitMaskLow & bitMaskHigh);
-			} else {
-				_markMap->markBlockAtomic(slotIndexLow, bitMaskLow);
-				_markMap->setMarkBlock(slotIndexLow + 1, slotIndexHigh - 1, (uintptr_t)-1);
-				_markMap->markBlockAtomic(slotIndexHigh, bitMaskHigh);
-			}
+			_markMap->preMark((omrobjectptr_t) objPtrLow, (omrobjectptr_t) objPtrHigh);
 		}
 	}
 protected:

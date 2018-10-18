@@ -55,8 +55,37 @@ public:
  	void initializeMarkMap(MM_EnvironmentBase *env);
 
 	MMINLINE void *getMarkBits() { return _heapMapBits; };
+
+	// TODO SATB: make sure we set getAllocationColor when running with gencon/optavgpause with SATB
+	// possibly in signalThreadsToActivateWriteBarrier/signalThreadsToDeactivateWriteBarrier methods
+	MMINLINE void markLargeAllocation(MM_EnvironmentBase *env, omrobjectptr_t objectPtr)
+	{
+		if ((NULL != objectPtr) && (GC_MARK == env->getAllocationColor())) {
+			setBit(objectPtr);
+		}
+	}
  	
 	MMINLINE uintptr_t getHeapMapBaseRegionRounded() { return _heapMapBaseDelta; }
+
+	/* objPtrHigh is the last object (cell) to be premarked.
+	 * => if there is only one object to premark than low will be equal to high
+	 */
+	MMINLINE void preMark(omrobjectptr_t objPtrLow, omrobjectptr_t objPtrHigh)
+	{
+		uintptr_t slotIndexLow, slotIndexHigh;
+		uintptr_t bitMaskLow, bitMaskHigh;
+
+		getSlotIndexAndBlockMask(objPtrLow, &slotIndexLow, &bitMaskLow, false /* high bit block mask for low slot word */);
+		getSlotIndexAndBlockMask(objPtrHigh, &slotIndexHigh, &bitMaskHigh, true /* low bit block mask for high slot word */);
+
+		if (slotIndexLow == slotIndexHigh) {
+			markBlockAtomic(slotIndexLow, bitMaskLow & bitMaskHigh);
+		} else {
+			markBlockAtomic(slotIndexLow, bitMaskLow);
+			setMarkBlock(slotIndexLow + 1, slotIndexHigh - 1, (uintptr_t)-1);
+			markBlockAtomic(slotIndexHigh, bitMaskHigh);
+		}
+	}
 
 	MMINLINE void
 	getSlotIndexAndBlockMask(omrobjectptr_t objectPtr, uintptr_t *slotIndex, uintptr_t *bitMask, bool lowBlock)
